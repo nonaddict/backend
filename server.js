@@ -1,8 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { connectDB } from './config/db.js';
-import Product from './models/Product.model.js';
+import { connectDB } from './db.js';
+import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
 
