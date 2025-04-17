@@ -5,12 +5,12 @@ import { connectDB } from './db.js';
 import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
+import { createHash } from 'crypto'; // Add this import for hashing challenge
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 app.use(cors({ origin: '*' }));
 
 // Create a product
@@ -97,8 +97,15 @@ app.all('/marketplace-account-deletion', (req, res) => {
     console.log('🔍 Challenge code received:', challenge);
 
     if (challenge) {
-      console.log('✅ Responding to eBay challenge.');
-      return res.status(200).json({ challengeResponse: challenge });
+      // Respond with hashed challenge and verification token (if required)
+      const hash = createHash('sha256');
+      hash.update(challenge);
+      hash.update(VERIFICATION_TOKEN);
+      hash.update(req.protocol + '://' + req.get('host') + req.originalUrl); // Include the full endpoint URL
+      const responseHash = hash.digest('hex');
+      
+      console.log('✅ Responding to eBay challenge with hash:', responseHash);
+      return res.status(200).json({ challengeResponse: responseHash });
     } else {
       console.warn('❌ Missing challenge_code.');
       return res.status(400).send('Missing challenge_code');
@@ -106,12 +113,12 @@ app.all('/marketplace-account-deletion', (req, res) => {
   }
 
   if (method === 'POST') {
-   const token =
-  req.get('verification-token') ||
-  req.get('verificationToken') ||
-  req.get('x-ebay-verification-token') ||
-  req.get('X-EBAY-VERIFICATION-TOKEN') ||
-  req.get('x-ebay-signature'); // optional for event signature
+    const token =
+      req.get('verification-token') ||
+      req.get('verificationToken') ||
+      req.get('x-ebay-verification-token') ||
+      req.get('X-EBAY-VERIFICATION-TOKEN') ||
+      req.get('x-ebay-signature'); // optional for event signature
 
     console.log('🔐 Received token:', token);
     console.log('🔐 Expected token:', VERIFICATION_TOKEN);
@@ -128,7 +135,6 @@ app.all('/marketplace-account-deletion', (req, res) => {
 
   res.status(405).send('Method Not Allowed');
 });
-
 
 // Connect to DB and start the server
 const PORT = process.env.PORT || 5000;
