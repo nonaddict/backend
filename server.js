@@ -91,7 +91,7 @@ const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
 
 app.all('/marketplace-account-deletion', (req, res) => {
     const method = req.method;
-    const token = req.get('verification-token') || req.get('x-ebay-verification-token') || req.get('X-EBAY-VERIFICATION-TOKEN'); // More robust
+    const token = req.get('verificationToken') || req.get('x-ebay-verification-token') || req.get('X-EBAY-VERIFICATION-TOKEN'); // More robust
 
     console.log('🔐 Received token:', token);
     console.log('🔐 Expected token:', VERIFICATION_TOKEN);
