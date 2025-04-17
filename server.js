@@ -1,11 +1,10 @@
 import express from 'express';
+import crypto from 'crypto';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import { connectDB } from './db.js';
 import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
-import { createHash } from 'crypto'; // Add this import for hashing challenge
 
 dotenv.config();
 
@@ -86,56 +85,62 @@ app.delete('/products', async (req, res) => {
     }
 });
 
+
 // Marketplace account deletion notification endpoint
 app.all('/marketplace-account-deletion', (req, res) => {
-  const method = req.method;
-  const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
+    const method = req.method;
+    const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
+    const ENDPOINT_URL = process.env.ENDPOINT_URL; // Ensure this is the correct URL
 
-  if (method === 'GET') {
-    const challenge = req.query['challenge_code'];
+    if (method === 'GET') {
+        const challengeCode = req.query['challenge_code'];
 
-    console.log('🔍 Challenge code received:', challenge);
+        console.log('🔍 Challenge code received:', challengeCode);
 
-    if (challenge) {
-      // Respond with hashed challenge and verification token (if required)
-      const hash = createHash('sha256');
-      hash.update(challenge);
-      hash.update(VERIFICATION_TOKEN);
-      hash.update(req.protocol + '://' + req.get('host') + req.originalUrl); // Include the full endpoint URL
-      const responseHash = hash.digest('hex');
-      
-      console.log('✅ Responding to eBay challenge with hash:', responseHash);
-      return res.status(200).json({ challengeResponse: responseHash });
-    } else {
-      console.warn('❌ Missing challenge_code.');
-      return res.status(400).send('Missing challenge_code');
+        if (challengeCode) {
+            // Hash the challenge code, verification token, and endpoint URL in the correct order
+            const hash = crypto.createHash('sha256');
+            hash.update(challengeCode);
+            hash.update(VERIFICATION_TOKEN);
+            hash.update(ENDPOINT_URL); // The endpoint URL
+
+            const responseHash = hash.digest('hex');
+
+            console.log('✅ Responding to eBay challenge with hash:', responseHash);
+            
+            // Respond with the challengeResponse
+            return res.status(200)
+                .json({ challengeResponse: responseHash })
+                .header('Content-Type', 'application/json');
+        } else {
+            console.warn('❌ Missing challenge_code.');
+            return res.status(400).send('Missing challenge_code');
+        }
     }
-  }
 
-  if (method === 'POST') {
-    const token =
-      req.get('verification-token') ||
-      req.get('verificationToken') ||
-      req.get('x-ebay-verification-token') ||
-      req.get('X-EBAY-VERIFICATION-TOKEN') ||
-      req.get('x-ebay-signature'); // optional for event signature
+    if (method === 'POST') {
+        const token =
+            req.get('verification-token') ||
+            req.get('verificationToken') ||
+            req.get('x-ebay-verification-token') ||
+            req.get('X-EBAY-VERIFICATION-TOKEN') ||
+            req.get('x-ebay-signature'); // optional for event signature
 
-    console.log('🔐 Received token:', token);
-    console.log('🔐 Expected token:', VERIFICATION_TOKEN);
+        console.log('🔐 Received token:', token);
+        console.log('🔐 Expected token:', VERIFICATION_TOKEN);
 
-    if (token === VERIFICATION_TOKEN) {
-      console.log('✅ Account deletion notification received:');
-      console.log(JSON.stringify(req.body, null, 2));
-      return res.status(200).send('OK');
-    } else {
-      console.warn('❌ Invalid verification token in POST.');
-      return res.status(403).send('Forbidden');
+        if (token === VERIFICATION_TOKEN) {
+            console.log('✅ Account deletion notification received:');
+            console.log(JSON.stringify(req.body, null, 2));
+            return res.status(200).send('OK');
+        } else {
+            console.warn('❌ Invalid verification token in POST.');
+            return res.status(403).send('Forbidden');
+        }
     }
-  }
 
-  res.status(405).send('Method Not Allowed');
+    res.status(405).send('Method Not Allowed');
 });
-
 // Connect to DB and start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
