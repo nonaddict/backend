@@ -85,12 +85,11 @@ app.delete('/products', async (req, res) => {
     }
 });
 
-
-// Marketplace account deletion notification endpoint
+//ebay notifications
 app.all('/marketplace-account-deletion', (req, res) => {
     const method = req.method;
     const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
-    const ENDPOINT_URL = process.env.ENDPOINT_URL; // Ensure this is the correct URL
+    const ENDPOINT_URL = process.env.ENDPOINT_URL;
 
     if (method === 'GET') {
         const challengeCode = req.query['challenge_code'];
@@ -119,28 +118,35 @@ app.all('/marketplace-account-deletion', (req, res) => {
     }
 
     if (method === 'POST') {
-        const token =
-            req.get('verification-token') ||
-            req.get('verificationToken') ||
-            req.get('x-ebay-verification-token') ||
-            req.get('X-EBAY-VERIFICATION-TOKEN') ||
-            req.get('x-ebay-signature'); // optional for event signature
+        // Extract the challengeCode and hash from eBay's POST request
+        const challengeCode = req.body.challengeCode;  // Ensure challenge code is sent in the body
+        const expectedHash = req.get('x-ebay-signature'); // Get the hash sent by eBay
 
-        console.log('🔐 Received token:', token);
-        console.log('🔐 Expected token:', VERIFICATION_TOKEN);
+        console.log('🔐 Received eBay signature:', expectedHash);
+        
+        // Hash the challengeCode and verification token to compare with eBay's signature
+        const hash = crypto.createHash('sha256');
+        hash.update(challengeCode);
+        hash.update(VERIFICATION_TOKEN);
+        const computedHash = hash.digest('hex');
 
-        if (token === VERIFICATION_TOKEN) {
-            console.log('✅ Account deletion notification received:');
-            console.log(JSON.stringify(req.body, null, 2));
+        console.log('🔐 Computed hash:', computedHash);
+
+        // Compare the hashes
+        if (computedHash === expectedHash) {
+            console.log('✅ Hashes match. Account deletion notification received:');
+            console.log(JSON.stringify(req.body, null, 2)); // Log the notification body
             return res.status(200).send('OK');
         } else {
-            console.warn('❌ Invalid verification token in POST.');
+            console.warn('❌ Hash mismatch. Invalid verification.');
             return res.status(403).send('Forbidden');
         }
     }
 
     res.status(405).send('Method Not Allowed');
 });
+
+
 // Connect to DB and start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
