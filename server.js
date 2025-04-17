@@ -90,26 +90,6 @@ app.delete('/products', async (req, res) => {
     }
 });
 
-app.get('/getItems', async (req, res) => {
-    try {
-        const response = await axios.get('https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search?q=phone&limit=5&offset=0', {
-            headers: {
-                'Authorization': `Bearer ${process.env.EBAY_TOKEN}`,
-                'Content-Type': 'application/json',
-                'X-EBAY-C-ENDUSERCTX': 'contextualLocation=country=IL', // Optional
-            }
-        });
-        res.status(200).json({ success: true, data: response.data });
-    } catch (error) {
-        console.error('Error fetching products from eBay:', error);
-        res.status(500).json({ success: false, message: 'Error fetching products from eBay', error: error.message });
-    }
-});
-
-const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN; // your 32–80 char token
-
-app.use(express.json());
-
 
 //ebay notifications
 app.all('/marketplace-account-deletion', (req, res) => {
