@@ -5,11 +5,18 @@ import { connectDB } from './db.js';
 import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
-import mongoose from 'mongoose';  // Import mongoose
+import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
 
-dotenv.config();
+
 
 const app = express();
+app.use(cors({ origin: '*' }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+dotenv.config();
+
+
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
@@ -92,68 +99,64 @@ app.all('/marketplace-account-deletion', (req, res) => {
     const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
     const ENDPOINT_URL = process.env.ENDPOINT_URL;
 
+    console.log(`📥 Received ${method} request`);
+    console.log('🔎 Query Params:', req.query);
+    console.log('📦 Body:', req.body);
+    console.log('🧾 Headers:', req.headers);
+
     if (method === 'GET') {
         const challengeCode = req.query['challenge_code'];
 
-        console.log('🔍 Challenge code received:', challengeCode);
+        console.log('🔍 Challenge code received (GET):', challengeCode);
 
-        if (challengeCode) {
-            // Hash the challenge code, verification token, and endpoint URL in the correct order
-            const hash = crypto.createHash('sha256');
-            hash.update(challengeCode);
-            hash.update(VERIFICATION_TOKEN);
-            hash.update(ENDPOINT_URL); // The endpoint URL
-
-            const responseHash = hash.digest('hex');
-
-            console.log('✅ Responding to eBay challenge with hash:', responseHash);
-            
-            // Respond with the challengeResponse
-            return res.status(200)
-                .json({ challengeResponse: responseHash })
-                .header('Content-Type', 'application/json');
-        } else {
-            console.warn('❌ Missing challenge_code.');
-            return res.status(400).send('Missing challenge_code');
-        }
-    }
-
-    if (method === 'POST') {
-        // Check if body contains challengeCode
-        const challengeCode = req.body.challengeCode;  
-        const expectedHash = req.get('x-ebay-signature'); // Get the hash sent by eBay
-
-        console.log('🔐 Received eBay signature:', expectedHash);
-        
-        // Log challengeCode and verificationToken to debug
-        console.log('🔐 Challenge Code:', challengeCode);
-        console.log('🔐 Verification Token:', VERIFICATION_TOKEN);
-
-        if (!challengeCode || !VERIFICATION_TOKEN) {
-            console.error('❌ Missing challengeCode or verificationToken');
-            return res.status(400).send('Missing challengeCode or verificationToken');
+        if (!challengeCode || !VERIFICATION_TOKEN || !ENDPOINT_URL) {
+            return res.status(400).send('Missing challenge_code or config');
         }
 
-        // Hash the challengeCode and verificationToken
+        // Create SHA256(challengeCode + verificationToken + endpointURL)
         const hash = crypto.createHash('sha256');
         hash.update(challengeCode);
         hash.update(VERIFICATION_TOKEN);
-        const computedHash = hash.digest('hex');
+        hash.update(ENDPOINT_URL);
+        const challengeResponse = hash.digest('hex');
 
-        console.log('🔐 Computed hash:', computedHash);
+        console.log('✅ Responding to eBay challenge with hash:', challengeResponse);
 
-        // Compare the hashes
-        if (computedHash === expectedHash) {
-            console.log('✅ Hashes match. Account deletion notification received:');
-            console.log(JSON.stringify(req.body, null, 2)); // Log the notification body
+        return res
+            .status(200)
+            .json({ challengeResponse })
+            .header('Content-Type', 'application/json');
+    }
+
+    if (method === 'POST') {
+        const challengeCode = req.body.challengeCode;
+        const ebaySignature = req.get('x-ebay-signature');
+
+        console.log('🔐 Received eBay signature (POST):', ebaySignature);
+        console.log('🔐 challengeCode from body:', challengeCode);
+        console.log('🔐 VERIFICATION_TOKEN:', VERIFICATION_TOKEN);
+
+        if (!challengeCode || !ebaySignature || !VERIFICATION_TOKEN) {
+            return res.status(400).send('Missing challengeCode or signature');
+        }
+
+        const hash = crypto.createHash('sha256');
+        hash.update(challengeCode);
+        hash.update(VERIFICATION_TOKEN);
+        const computedSignature = hash.digest('hex');
+
+        console.log('🔐 Computed signature:', computedSignature);
+
+        if (computedSignature === ebaySignature) {
+            console.log('✅ Signature verified. Account deletion data:', JSON.stringify(req.body, null, 2));
             return res.status(200).send('OK');
         } else {
-            console.warn('❌ Hash mismatch. Invalid verification.');
+            console.warn('❌ Signature mismatch');
             return res.status(403).send('Forbidden');
         }
     }
 
-    res.status(405).send('Method Not Allowed');
+    return res.status(405).send('Method Not Allowed');
 });
 
 // Connect to DB and start the server
