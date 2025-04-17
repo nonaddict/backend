@@ -5,6 +5,7 @@ import { connectDB } from './db.js';
 import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
+import mongoose from 'mongoose';  // Import mongoose
 
 dotenv.config();
 
@@ -85,7 +86,7 @@ app.delete('/products', async (req, res) => {
     }
 });
 
-//ebay notifications
+// eBay notifications
 app.all('/marketplace-account-deletion', (req, res) => {
     const method = req.method;
     const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
@@ -118,13 +119,22 @@ app.all('/marketplace-account-deletion', (req, res) => {
     }
 
     if (method === 'POST') {
-        // Extract the challengeCode and hash from eBay's POST request
-        const challengeCode = req.body.challengeCode;  // Ensure challenge code is sent in the body
+        // Check if body contains challengeCode
+        const challengeCode = req.body.challengeCode;  
         const expectedHash = req.get('x-ebay-signature'); // Get the hash sent by eBay
 
         console.log('🔐 Received eBay signature:', expectedHash);
         
-        // Hash the challengeCode and verification token to compare with eBay's signature
+        // Log challengeCode and verificationToken to debug
+        console.log('🔐 Challenge Code:', challengeCode);
+        console.log('🔐 Verification Token:', VERIFICATION_TOKEN);
+
+        if (!challengeCode || !VERIFICATION_TOKEN) {
+            console.error('❌ Missing challengeCode or verificationToken');
+            return res.status(400).send('Missing challengeCode or verificationToken');
+        }
+
+        // Hash the challengeCode and verificationToken
         const hash = crypto.createHash('sha256');
         hash.update(challengeCode);
         hash.update(VERIFICATION_TOKEN);
@@ -145,7 +155,6 @@ app.all('/marketplace-account-deletion', (req, res) => {
 
     res.status(405).send('Method Not Allowed');
 });
-
 
 // Connect to DB and start the server
 const PORT = process.env.PORT || 5000;
