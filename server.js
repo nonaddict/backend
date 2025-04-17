@@ -110,33 +110,45 @@ const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN; // your 32–80 char 
 
 app.use(express.json());
 
+
+//ebay notifications
 app.all('/marketplace-account-deletion', (req, res) => {
   const method = req.method;
   const token = req.headers['verification-token'];
 
-  if (method === 'GET') {
-    const challenge = req.query['challenge_code'];
-    if (challenge && token === VERIFICATION_TOKEN) {
-      console.log('✅ Challenge verification request received.');
-      return res.status(200).json({ challengeResponse: challenge });
-    } else {
-      console.warn('❌ Invalid challenge request.');
-      return res.status(403).send('Forbidden');
-    }
-  }
+  // Marketplace account deletion notification endpoint
+const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
 
-  if (method === 'POST') {
-    if (token === VERIFICATION_TOKEN) {
-      console.log('✅ Account deletion notification received:');
-      console.log(JSON.stringify(req.body, null, 2));
-      return res.status(200).send('OK');
-    } else {
-      console.warn('❌ Invalid verification token in POST.');
-      return res.status(403).send('Forbidden');
-    }
-  }
+app.all('/marketplace-account-deletion', (req, res) => {
+    const method = req.method;
+    const token = req.get('verification-token'); // ✅ Better compatibility with varying casing
 
-  res.status(405).send('Method Not Allowed');
+    console.log('🔐 Received token:', token);
+    console.log('🔐 Expected token:', VERIFICATION_TOKEN);
+
+    if (method === 'GET') {
+        const challenge = req.query['challenge_code'];
+        if (challenge && token === VERIFICATION_TOKEN) {
+            console.log('✅ Challenge verification request received.');
+            return res.status(200).json({ challengeResponse: challenge });
+        } else {
+            console.warn('❌ Invalid challenge request.');
+            return res.status(403).send('Forbidden');
+        }
+    }
+
+    if (method === 'POST') {
+        if (token === VERIFICATION_TOKEN) {
+            console.log('✅ Account deletion notification received:');
+            console.log(JSON.stringify(req.body, null, 2));
+            return res.status(200).send('OK');
+        } else {
+            console.warn('❌ Invalid verification token in POST.');
+            return res.status(403).send('Forbidden');
+        }
+    }
+
+    res.status(405).send('Method Not Allowed');
 });
 
 
