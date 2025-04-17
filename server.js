@@ -14,11 +14,8 @@ app.use(express.json());
 
 // ✅ Allow CORS from any origin (for development)
 app.use(cors());
+app.use(cors({ origin: '*' }));
 
-// OR if you want to allow only your frontend:
-app.use(cors({
-    origin: 'http://127.0.0.1:5500'
-}));
 
 // Create a product
 app.post('/products', async (req, res) => {
