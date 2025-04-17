@@ -6,16 +6,12 @@ import Product from './Product.model.js';
 import axios from 'axios';
 import cors from 'cors';
 
-
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-
-// ✅ Allow CORS from any origin (for development)
 app.use(cors());
 app.use(cors({ origin: '*' }));
-
 
 // Create a product
 app.post('/products', async (req, res) => {
@@ -90,18 +86,12 @@ app.delete('/products', async (req, res) => {
     }
 });
 
-
-//ebay notifications
-app.all('/marketplace-account-deletion', (req, res) => {
-  const method = req.method;
-  const token = req.headers['verification-token'];
-
-  // Marketplace account deletion notification endpoint
+// Marketplace account deletion notification endpoint
 const VERIFICATION_TOKEN = process.env.VERIFICATION_TOKEN;
 
 app.all('/marketplace-account-deletion', (req, res) => {
     const method = req.method;
-    const token = req.get('verification-token'); // ✅ Better compatibility with varying casing
+    const token = req.get('verification-token'); // More robust
 
     console.log('🔐 Received token:', token);
     console.log('🔐 Expected token:', VERIFICATION_TOKEN);
@@ -131,10 +121,9 @@ app.all('/marketplace-account-deletion', (req, res) => {
     res.status(405).send('Method Not Allowed');
 });
 
-
 // Connect to DB and start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     connectDB(process.env.MONGO_URI); // Ensure MongoDB URI is in .env
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
