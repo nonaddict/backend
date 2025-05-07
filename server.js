@@ -10,15 +10,16 @@ import mongoose from 'mongoose';
 
 
 
-const app = express();
-app.use(cors({ origin: '*' }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 dotenv.config();
 
+app.use(cors({
+  origin: '*', // Or replace '*' with your frontend URL in production, like 'https://your-frontend.com'
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
-app.use(cors({ origin: '*' }));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Create a product
 app.post('/products', async (req, res) => {
