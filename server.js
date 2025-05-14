@@ -1,11 +1,13 @@
-const express = require('express');
-const crypto = require('crypto');
-const dotenv = require('dotenv');
-const { connectDB } = require('./db.js');
-const productSchema = require('./Product.model.js');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+
+import express from 'express';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import bodyParser from 'body-parser'; // Optional, see below
+
+import { connectDB } from './db.js';
+import productSchema from './Product.model.js';
 
 
 const app = express();
