@@ -43,7 +43,7 @@ app.post('/ebay-gadgets/products', async (req, res) => {
     }
 });
 
-app.get('ebay-gadgets/products', async (req, res) => {
+app.get('/ebay-gadgets/products', async (req, res) => {
     try {
         const products = await ebayGadget.find({});
         res.status(200).json({ success: true, data: products });
@@ -53,7 +53,7 @@ app.get('ebay-gadgets/products', async (req, res) => {
     }
 });
 
-app.delete('ebay-gadgets/products', async (req, res) => {
+app.delete('/ebay-gadgets/products', async (req, res) => {
     try {
         await ebayGadget.deleteMany({});
         res.status(200).json({ success: true, message: "All products deleted" });
@@ -81,7 +81,7 @@ app.post('/amazon-gadgets/products', async (req, res) => {
     }
 });
 
-app.get('amazon-gadgets/products', async (req, res) => {
+app.get('/amazon-gadgets/products', async (req, res) => {
     try {
         const products = await amazonGadget.find({});
         res.status(200).json({ success: true, data: products });
@@ -91,7 +91,7 @@ app.get('amazon-gadgets/products', async (req, res) => {
     }
 });
 
-app.delete('amazon-gadgets/products', async (req, res) => {
+app.delete('/amazon-gadgets/products', async (req, res) => {
     try {
         await amazonGadget.deleteMany({});
         res.status(200).json({ success: true, message: "All products deleted" });
@@ -119,7 +119,7 @@ app.post('/ebay-iphones/products', async (req, res) => {
     }
 });
 
-app.get('ebay-iphones/products', async (req, res) => {
+app.get('/ebay-iphones/products', async (req, res) => {
     try {
         const products = await ebayIpones.find({});
         res.status(200).json({ success: true, data: products });
@@ -129,7 +129,7 @@ app.get('ebay-iphones/products', async (req, res) => {
     }
 });
 
-app.delete('ebay-iphones/products', async (req, res) => {
+app.delete('/ebay-iphones/products', async (req, res) => {
     try {
         await ebayIpones.deleteMany({});
         res.status(200).json({ success: true, message: "All products deleted" });
@@ -157,7 +157,7 @@ app.post('/amazon-iphones/products', async (req, res) => {
     }
 });
 
-app.get('amazon-iphones/products', async (req, res) => {
+app.get('/amazon-iphones/products', async (req, res) => {
     try {
         const products = await amazonIpones.find({});
         res.status(200).json({ success: true, data: products });
@@ -167,7 +167,7 @@ app.get('amazon-iphones/products', async (req, res) => {
     }
 });
 
-app.delete('amazon-iphones/products', async (req, res) => {
+app.delete('/amazon-iphones/products', async (req, res) => {
     try {
         await amazonIpones.deleteMany({});
         res.status(200).json({ success: true, message: "All products deleted" });
